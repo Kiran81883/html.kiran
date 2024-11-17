@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Finance Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to right, #ff7e5f, #feb47b);
+            color: #333;
+        }
+
+        header {
+            background-color: #ff6f61;
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            animation: slideInDown 1s ease-in-out;
+        }
+
+        @keyframes slideInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        main {
+            padding: 20px;
+        }
+
+        h1, h2 {
+            margin: 0 0 20px 0;
+            text-align: center;
+        }
+
+        .form-group, .summary, .transactions {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 2px solid #ff6f61;
+            border-radius: 5px;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        input:focus, select:focus {
+            border-color: #feb47b;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #ff6f61;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #feb47b;
+            transform: scale(1.05);
+        }
+
+        .transactions .transaction {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            animation: fadeInUp 0.5s ease-in-out;
+        }
+
+        .transactions .transaction:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .income {
+            color: green;
+            font-weight: bold;
+        }
+
+        .expense {
+            color: red;
+            font-weight: bold;
+        }
+
+        .transaction img {
+            height: 50px;
+            width: 50px;
+            margin-right: 10px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            background: #ff6f61;
+            color: white;
+            position: fixed;
+            width: 100%;
+            bottom: 0;
+            animation: slideInUp 1s ease-in-out;
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Personal Finance Tracker</h1>
+    </header>
+    <main>
+        <section class="form-group">
+            <h2>Add Transaction</h2>
+            <form id="transactionForm">
+                <label for="type">Type:</label>
+                <select id="type" name="type" required>
+                    <option value="income">Income</option>
+                    <option value="expense">Expense</option>
+                </select>
+                <label for="description">Description:</label>
+                <input type="text" id="description" name="description" required>
+                <label for="amount">Amount:</label>
+                <input type="number" id="amount" name="amount" required>
+                <button type="submit">Add Transaction</button>
+            </form>
+        </section>
+        <section class="summary" id="summary">
+            <h2>Monthly Summary</h2>
+            <p>Total Income: <span id="totalIncome">$0</span></p>
+            <p>Total Expenses: <span id="totalExpenses">$0</span></p>
+            <p>Balance: <span id="balance">$0</span></p>
+        </section>
+        <section class="transactions">
+            <h2>Transaction History</h2>
+            <div id="transactionsContainer"></div>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2024 Personal Finance Tracker</p>
+    </footer>
+    <script>
+        document.getElementById('transactionForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            const type = document.getElementById('type').value;
+            const description = document.getElementById('description').value;
+            const amount = parseFloat(document.getElementById('amount').value).toFixed(2);
+
+            const transaction = {
+                id: Date.now(), // Unique ID based on timestamp
+                type,
+                description,
+                amount
+            };
+
+            let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+            transactions.push(transaction);
+            localStorage.setItem('transactions', JSON.stringify(transactions));
+
+            displayTransactions();
+            updateSummary();
+        });
+
+        function displayTransactions() {
+            const transactionsContainer = document.getElementById('transactionsContainer');
+            transactionsContainer.innerHTML = '';
+
+            let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+
+            transactions.forEach(transaction => {
+                const transactionElement = document.createElement('div');
+                transactionElement.className = 'transaction';
+                transactionElement.innerHTML = `
+                    <img src="https://via.placeholder.com/50" alt="Finance">
+                    <span>${transaction.description}</span>
+                    <span class="${transaction.type}">${transaction.type === 'income' ? '+' : '-'}$${transaction.amount}</span>
+                    <button onclick="deleteTransaction(${transaction.id})">Delete</button>
+                `;
+                transactionsContainer.appendChild(transactionElement);
+            });
+        }
+
+        function updateSummary() {
+            let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+            let totalIncome = 0;
+            let totalExpenses = 0;
+
+            transactions.forEach(transaction => {
+                if (transaction.type === 'income') {
+                    totalIncome += parseFloat(transaction.amount);
+                } else {
+                    totalExpenses += parseFloat(transaction.amount);
+                }
+            });
+
+            const balance = totalIncome - totalExpenses;
+
+            document.getElementById('totalIncome').textContent = `$${totalIncome.toFixed(2)}`;
+            document.getElementById('totalExpenses').textContent = `$${totalExpenses.toFixed(2)}`;
+            document.getElementById('balance').textContent = `$${balance.toFixed(2)}`;
+        }
+
+        function deleteTransaction(id) {
+            let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+
+            transactions = transactions.filter(transaction => transaction.id !== id);
+
+            localStorage.setItem('transactions', JSON.stringify(transactions));
+
+            displayTransactions();
+            updateSummary();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            displayTransactions();
+            updateSummary();
+        });
+    </script>
+</body>
+</html>
